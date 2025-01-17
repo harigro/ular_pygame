@@ -3,25 +3,34 @@ import sys
 from random import choice
 # from pygame_grid import GridDrawer
 
-class Ular:
-    def __init__(self, lebar, tinggi, ukuran_grid):
+class Makanan:
+    def __init__(self, lebar, tinggi, ukuran_grid, pembatas):
         self.lebar = lebar
         self.tinggi = tinggi
+        self.pembatas = pembatas
         self.ukuran_grid = ukuran_grid
         self.kotak = pg.Rect(0, 0, ukuran_grid, ukuran_grid)
         self.kotak.topleft = self.posisi_acak()
+
+    def posisi_acak(self):
+        return [choice(range(self.pembatas, self.lebar-self.pembatas, self.ukuran_grid)), 
+                choice(range(self.pembatas, self.tinggi-self.pembatas, self.ukuran_grid))]
+
+    def pindah(self, ular_segmen):
+        while True:
+            posisi_baru = self.posisi_acak()
+            self.kotak.topleft = posisi_baru
+            if self.kotak not in ular_segmen:
+                break
+
+class Ular(Makanan):
+    def __init__(self, lebar, tinggi, ukuran_grid, pembatas):
+        super().__init__(lebar, tinggi, ukuran_grid, pembatas)
         self.segmen = []
         self.panjang = 1
         self.arah = "kanan"
-        self.bekukan = False
-
-    def posisi_acak(self):
-        return [choice(range(0, self.lebar, self.ukuran_grid)), choice(range(0, self.tinggi, self.ukuran_grid))]
 
     def gerak(self):
-        if self.bekukan:
-            return
-
         if self.arah == 'atas':
             self.kotak.move_ip(0, -self.ukuran_grid)
         elif self.arah == 'kanan':
@@ -35,50 +44,28 @@ class Ular:
         if len(self.segmen) > self.panjang:
             self.segmen.pop(0)
 
-    def cek_keluar_layar(self):
-        keluar_horizontal = all(seg.right <= 0 or seg.left >= self.lebar for seg in self.segmen)
-        keluar_vertical = all(seg.bottom <= 0 or seg.top >= self.tinggi for seg in self.segmen)
-
-        if keluar_horizontal or keluar_vertical:
-            self.bekukan = True
-
     def pindahkan_ke_sisi_berlawanan(self):
-        if not self.bekukan:
-            return
         if self.kotak.right <= 0:
             self.kotak.left = self.lebar
         elif self.kotak.left >= self.lebar:
             self.kotak.right = 0
-        elif self.kotak.bottom <= 0:
-            self.kotak.top = self.tinggi
-        elif self.kotak.top >= self.tinggi:
-            self.kotak.bottom = 0
 
-        self.bekukan = False
+        # Tangani jika kepala ular melewati batas vertikal
+        elif self.kotak.top < self.pembatas:
+            # Jika melewati batas atas, pindahkan ke bawah layar
+            self.kotak.top = self.tinggi - self.ukuran_grid
+        elif self.kotak.bottom > self.tinggi:
+            # Jika melewati batas bawah, pindahkan ke atas layar
+            self.kotak.top = self.pembatas
+
+        # Perbarui segmen agar sinkron dengan posisi kepala
+        self.segmen[-1] = self.kotak.copy()
 
     def reset(self):
         self.segmen.clear()
         self.panjang = 1
         self.kotak.topleft = self.posisi_acak()
         self.bekukan = False
-
-class Makanan:
-    def __init__(self, lebar, tinggi, ukuran_grid):
-        self.lebar = lebar
-        self.tinggi = tinggi
-        self.ukuran_grid = ukuran_grid
-        self.rect = pg.Rect(0, 0, ukuran_grid, ukuran_grid)
-        self.rect.topleft = self.posisi_acak()
-
-    def posisi_acak(self):
-        return [choice(range(0, self.lebar, self.ukuran_grid)), choice(range(0, self.tinggi, self.ukuran_grid))]
-
-    def pindah(self, ular_segmen):
-        while True:
-            posisi_baru = self.posisi_acak()
-            self.rect.topleft = posisi_baru
-            if self.rect not in ular_segmen:
-                break
 
 class Game:
     def __init__(self):
@@ -88,8 +75,8 @@ class Game:
         self.layar = pg.display.set_mode((self.lebar, self.tinggi), pg.NOFRAME)
         pg.display.set_caption('Ular')
         self.fps = pg.time.Clock()
-        self.ular = Ular(self.lebar, self.tinggi, self.ukuran_grid)
-        self.makanan = Makanan(self.lebar, self.tinggi, self.ukuran_grid)
+        self.ular = Ular(self.lebar, self.tinggi, self.ukuran_grid, self.tinggi//5)
+        self.makanan = Makanan(self.lebar, self.tinggi, self.ukuran_grid, self.tinggi//5)
         self.skor = 0
         self.font = pg.font.SysFont('Arial', 24)
         self.jalan = True
@@ -141,14 +128,14 @@ class Game:
         # Gambar elemen permainan di area permainan
         for segmen in self.ular.segmen:
             pg.draw.rect(self.layar, 'red', segmen)
-        pg.draw.rect(self.layar, 'green', self.makanan.rect)
+        pg.draw.rect(self.layar, 'green', self.makanan.kotak)
 
         # Perbarui tampilan layar
         pg.display.flip()
 
 
     def cek_tabrakan(self):
-        if self.ular.kotak.colliderect(self.makanan.rect):
+        if self.ular.kotak.colliderect(self.makanan.kotak):
             self.ular.panjang += 1
             self.skor += 10
             self.makanan.pindah(self.ular.segmen)
@@ -163,7 +150,7 @@ class Game:
             self.kontrol()
             self.gambar()
             self.ular.gerak()
-            self.ular.cek_keluar_layar()
+            # self.ular.cek_keluar_layar()
             self.ular.pindahkan_ke_sisi_berlawanan()
             self.cek_tabrakan()
             self.fps.tick(9)
