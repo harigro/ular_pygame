@@ -66,7 +66,7 @@ class Ular(Makanan):
         # Tangani jika kepala ular melewati batas vertikal
         elif self.kotak.top < self.pembatas:
             # Jika melewati batas atas, pindahkan ke bawah layar
-            self.kotak.top = self.tinggi - self.ukuran_grid
+            self.kotak.bottom = self.tinggi - self.ukuran_grid
         elif self.kotak.bottom > self.tinggi:
             # Jika melewati batas bawah, pindahkan ke atas layar
             self.kotak.top = self.pembatas
@@ -77,7 +77,6 @@ class Ular(Makanan):
         self.segmen.clear()
         self.panjang = 1
         self.kotak.topleft = self.posisi_acak()
-        self.bekukan = False
 
 class BelahLayar(Objek):
     def __init__(self, layar: pg.display, lebar: int, tinggi: int, ukuran_grid: int, pembatas: int):
@@ -98,6 +97,14 @@ class BelahLayar(Objek):
                 pg.draw.line(self.layar, (255, 255, 0, 50), (x, mainan.top), (x, mainan.bottom))
             for y in range(mainan.top, mainan.bottom, self.ukuran_grid):
                 pg.draw.line(self.layar, (255, 255, 0, 50), (mainan.left, y), (mainan.right, y))
+
+class Gambar:
+    def __init__(self, source: str):
+        self.source = source
+
+    def blit(self, screen: pg.display, dest:pg.Rect, transform: int) -> None:
+        screen.blit(pg.transform.scale(pg.image.load(self.source), (transform, transform)), dest.topleft)
+        
 
 class Game:
     def __init__(self):
@@ -136,6 +143,8 @@ class Game:
         belah = BelahLayar(self.layar, self.lebar, self.tinggi, self.ukuran_grid, self.pembatasan)
         belah.daerah_skor()
         belah.daerah_permainan()
+        buah = Gambar("assets/apple.png")
+        # pemangsa = Gambar("assets/snake.png")
 
         # Gambar teks skor di area skor
         teks_skor = pg.font.Font(None, 36).render(f'Skor: {self.skor}', True, 'white')
@@ -144,7 +153,7 @@ class Game:
         # Gambar elemen permainan di area permainan
         for segmen in self.ular.segmen:
             pg.draw.rect(self.layar, 'red', segmen)
-        pg.draw.rect(self.layar, 'green', self.makanan.kotak)
+        buah.blit(self.layar, pg.Rect(self.makanan.kotak), self.ukuran_grid)
 
         # Perbarui tampilan layar
         pg.display.flip()
