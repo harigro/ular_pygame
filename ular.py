@@ -113,7 +113,7 @@ class Game:
         self.lebar, self.tinggi = 600, 400
         self.ukuran_grid = 20
         self.layar = pg.display.set_mode((self.lebar, self.tinggi), pg.NOFRAME)
-        pg.display.set_caption('Ular')
+        self.catat = []
         self.fps = pg.time.Clock()
         self.pembatasan = Kons.batas(self.tinggi//5)
         self.ular = Ular(self.lebar, self.tinggi, self.ukuran_grid, self.pembatasan)
@@ -166,10 +166,20 @@ class Game:
         self.layar.blit(teks_skor, (10, 10))
 
         # Gambar elemen permainan di area permainan
+        # posisi_ekor = self.ular.segmen[-1]
         for i, segmen in enumerate(self.ular.segmen):
             pg.draw.rect(self.layar, 'red', segmen)
-            if self.ular.arah != self.ular.arah_sebelumnya:
-                print(f"{self.ular.arah}, {self.ular.arah_sebelumnya}, {segmen[0]}, {segmen[1]:<5}", end='\r')
+            if self.ular.arah != self.ular.arah_sebelumnya and self.ular.panjang > 2:
+                if i != 0 and self.ular.segmen[-1] != segmen and len(self.catat) != 0:
+                    self.catat.pop(0)
+                else:
+                    self.catat.append(segmen)
+            else:
+                if self.ular.segmen[-1] == segmen:
+                    self.catat.clear()
+            # print(f"{self.ular.arah}, {self.ular.arah_sebelumnya}, {segmen[0]}, {segmen[1]:<5}", end='\r')
+            print(f"belokan : {self.catat}:<5", end='\r')
+            # print()
         buah.blit(self.layar, pg.Rect(self.makanan.kotak), self.ukuran_grid)
 
         # Perbarui tampilan layar
@@ -193,7 +203,7 @@ class Game:
             self.ular.gerak()
             self.ular.pindahkan_ke_sisi_berlawanan()
             self.cek_tabrakan()
-            self.fps.tick(9)
+            self.fps.tick(6)
 
 if __name__ == '__main__':
     game = Game()
