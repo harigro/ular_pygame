@@ -42,8 +42,10 @@ class Ular(Makanan):
         self.segmen = []
         self.panjang = Kons.panjang(1)
         self.arah = "kanan"
+        self.arah_sebelumnya = None
 
     def gerak(self):
+        self.arah_sebelumnya = self.arah
         if self.arah == 'atas':
             self.kotak.move_ip(0, -self.ukuran_grid)
         elif self.arah == 'kanan':
@@ -52,7 +54,6 @@ class Ular(Makanan):
             self.kotak.move_ip(0, self.ukuran_grid)
         elif self.arah == 'kiri':
             self.kotak.move_ip(-self.ukuran_grid, 0)
-
         self.segmen.append(self.kotak.copy())
         if len(self.segmen) > self.panjang:
             self.segmen.pop(0)
@@ -66,7 +67,7 @@ class Ular(Makanan):
         # Tangani jika kepala ular melewati batas vertikal
         elif self.kotak.top < self.pembatas:
             # Jika melewati batas atas, pindahkan ke bawah layar
-            self.kotak.bottom = self.tinggi - self.ukuran_grid
+            self.kotak.bottom = self.tinggi
         elif self.kotak.bottom > self.tinggi:
             # Jika melewati batas bawah, pindahkan ke atas layar
             self.kotak.top = self.pembatas
@@ -144,15 +145,31 @@ class Game:
         belah.daerah_skor()
         belah.daerah_permainan()
         buah = Gambar("assets/apple.png")
-        # pemangsa = Gambar("assets/snake.png")
+        # pemangsa
+        pemangsa = lambda o, x, y, z: Gambar(o).blit(x, y, z)
+        kepala = ["assets/head_left.png"
+                  "assets/head_up.png",
+                  "assets/head_right.png",
+                  "assets/head_down.png"]
+        badan = ["assets/body_bottomleft.png",
+                "assets/body_bottomright.png",
+                "assets/body_horizontal.png",
+                "assets/body_topleft.png",
+                "assets/body_topright.png"]
+        ekor = ["assets/tail_left.png",
+                "assets/tail_up.png",
+                "assets/tail_right.png",
+                "assets/tail_down.png"]
 
         # Gambar teks skor di area skor
         teks_skor = pg.font.Font(None, 36).render(f'Skor: {self.skor}', True, 'white')
         self.layar.blit(teks_skor, (10, 10))
 
         # Gambar elemen permainan di area permainan
-        for segmen in self.ular.segmen:
+        for i, segmen in enumerate(self.ular.segmen):
             pg.draw.rect(self.layar, 'red', segmen)
+            if self.ular.arah != self.ular.arah_sebelumnya:
+                print(f"{self.ular.arah}, {self.ular.arah_sebelumnya}, {segmen[0]}, {segmen[1]:<5}", end='\r')
         buah.blit(self.layar, pg.Rect(self.makanan.kotak), self.ukuran_grid)
 
         # Perbarui tampilan layar
