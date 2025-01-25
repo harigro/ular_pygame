@@ -1,7 +1,6 @@
 import pygame as pg
 import sys
 from random import choice
-# from pygame_grid import GridDrawer
 
 class Makanan:
     def __init__(self, lebar, tinggi, ukuran_grid, pembatas):
